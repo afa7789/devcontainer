@@ -1,8 +1,10 @@
 # Run devcontainer outside of Visual Studio Code
-Are you also a big fan of [Visual Studio Devcontainer](https://code.visualstudio.com/docs/remote/containers)? Do you also sometimes want to just run the devcontainer outside of Visual Studio Code? Me also! That is why I have created this simple bash script. The script parses the `devcontainer.json` file and runs the docker container outside of Visual Studio Code.
+Are you also a big fan of [Visual Studio Devcontainer](https://code.visualstudio.com/docs/remote/containers)?
+Do you also sometimes want to just run the devcontainer outside of Visual Studio Code?
+Me also! That is why I have created this simple bash script.
+The script parses the `devcontainer.json` file and runs the docker container outside of Visual Studio Code.
 
 Example
-
 ![Example](example.gif)
 
 ## How does it work?
@@ -17,13 +19,25 @@ The following options from the `devcontainer.json` are supported:
 - `remoteUser` starts the shell with the defined user.
 
 ## How to install?
-You can install the devcontainer script by either [downloading the script](https://raw.githubusercontent.com/BorisWilhelms/devcontainer/main/devcontainer.sh) and place it into a folder in you $PATH variable or you can use the following command to download and install the script.
+You can install the devcontainer script by either [downloading the script](https://raw.githubusercontent.com/afa7789/devcontainer/main/devcontainer.sh)
+and place it into a folder in you $PATH variable or you can use the following command to download and install the script.
 
 ```
-sudo sh -c 'curl -s https://raw.githubusercontent.com/BorisWilhelms/devcontainer/main/devcontainer.sh > /usr/local/bin/devcontainer && chmod +x /usr/local/bin/devcontainer'
+sudo sh -c 'curl -s https://raw.githubusercontent.com/afa7789/devcontainer/main/devcontainer.sh > /usr/local/bin/devcontainer && chmod +x /usr/local/bin/devcontainer'
 ```
 ### Prerequisites
 The script uses [jq](https://stedolan.github.io/jq/) to parse the `devcontainer.json`. Therefore it must be installed.
 
 ## Known issues
-- Since `jq` expects a valid JSON file, all possible JSON error (e.g. `,` without following properties) has to be corrected. The script will strip all comments (`//`) to make it more valid.
+- Since `jq` expects a valid JSON file, all possible JSON error (e.g. `,` without following properties) has to be corrected.
+The script will strip all comments (`//`) to make it more valid.
+
+## Using it
+```sh
+# verbose mode
+devcontainer -v 
+# target a path
+devcontainer -t path/to/root/folder 
+# you can use both too
+devcontainer -v -t path/to/project/folder
+```

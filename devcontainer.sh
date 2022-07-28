@@ -6,10 +6,11 @@ if ! [ -x "$(command -v jq)" ]; then
 fi
 OPTIND=1
 VERBOSE=0
-
-while getopts "v" opt; do
+PWD=$(pwd)
+while getopts "vt:" opt; do
     case ${opt} in
         v ) VERBOSE=1 ;;
+        t ) PWD="${OPTARG}"; pushd $PWD ;; 
     esac
 done
 
@@ -19,7 +20,7 @@ debug() {
     fi
 }
 
-WORKSPACE=${1:-`pwd`}
+WORKSPACE=$PWD
 CURRENT_DIR=${PWD##*/}
 echo "Using workspace ${WORKSPACE}"
 
@@ -41,17 +42,27 @@ DOCKER_FILE=$(echo $CONFIG | jq -r .dockerFile)
 if [ "$DOCKER_FILE" == "null" ]; then 
     DOCKER_FILE=$(echo $CONFIG | jq -r .build.dockerfile)
 fi
+DOCKER_IMAGE_PRESENT=false
 DOCKER_FILE=$(readlink -f $DOCKER_FILE)
 debug "DOCKER_FILE: ${DOCKER_FILE}"
 if ! [ -e $DOCKER_FILE ]; then
-    echo "Can not find dockerfile ${DOCKER_FILE}"
-    exit
+    DOCKER_IMAGE_HASH=$(echo $CONFIG | jq -r '.image')
+    debug "Docker image gotten is: $DOCKER_IMAGE_HASH"
+    if [ "$DOCKER_IMAGE_HASH" == "null" ];then
+        echo "Can not find dockerfile ${DOCKER_FILE}"
+        exit
+    else
+        
+        DOCKER_IMAGE_PRESENT=true
+    fi
 fi
 
 REMOTE_USER=$(echo $CONFIG | jq -r .remoteUser)
 debug "REMOTE_USER: ${REMOTE_USER}"
 if ! [ "$REMOTE_USER" == "null" ]; then
     REMOTE_USER="-u ${REMOTE_USER}"
+else
+    REMOTE_USER=""
 fi
 
 ARGS=$(echo $CONFIG | jq -r '.build.args | to_entries? | map("--build-arg \(.key)=\"\(.value)\"")? | join(" ")')
@@ -73,7 +84,9 @@ MOUNT="${MOUNT} --mount type=bind,source=${WORKSPACE},target=${WORK_DIR}"
 debug "MOUNT: ${MOUNT}"
 
 echo "Building and starting container"
-DOCKER_IMAGE_HASH=$(docker build -f $DOCKER_FILE $ARGS .)
+if ! $DOCKER_IMAGE_PRESENT ;then
+    DOCKER_IMAGE_HASH=$(docker build -f $DOCKER_FILE $ARGS .)
+fi
 debug "DOCKER_IMAGE_HASH: ${DOCKER_IMAGE_HASH}"
-
+debug "docker run -it $REMOTE_USER $PORTS $ENVS $MOUNT -w $WORK_DIR $DOCKER_IMAGE_HASH $SHELL"
 docker run -it $REMOTE_USER $PORTS $ENVS $MOUNT -w $WORK_DIR $DOCKER_IMAGE_HASH $SHELL
